@@ -1,41 +1,17 @@
--- =====================================================================
--- Problem 1: Active restaurant distribution by city and state
--- =====================================================================
--- Examine active restaurant distribution by city and state for
--- high-rated establishments (average_rating >= 3.5).
---
--- Expected output columns (in order):
---   city, state, restaurant_count, avg_rating
---
--- Schema: food-delivery (restaurants table)
--- Technique: GROUP BY + aggregate functions (COUNT, AVG)
--- =====================================================================
-
+-- What is the distribution of active, high-rated (>= 3.5) restaurants by city and state?
 select
     city,
     state,
     count(restaurant_id)          as restaurant_count,
     round(avg(average_rating), 2) as avg_rating
 from restaurants
-where is_active = TRUE
+where is_active = "TRUE"
     and average_rating >= 3.5
 group by city, state
 order by state asc, city asc;
 
 
--- =====================================================================
--- Problem 2: Menu item popularity by category and spice level
--- =====================================================================
--- Study menu item popularity by category and spice level across all
--- restaurants.
---
--- Expected output columns (in order):
---   category_name, spice_level, items_ordered, total_quantity
---
--- Schema: food-delivery (item_categories, menu_items, order_items)
--- Technique: Multi-table JOIN + COUNT(DISTINCT) to avoid fan-out
--- =====================================================================
-
+-- Which menu item categories and spice levels are most popular across all restaurants?
 select
     i.category_name,
     m.spice_level,
@@ -48,19 +24,7 @@ group by i.category_name, m.spice_level
 order by i.category_name asc, total_quantity desc;
 
 
--- =====================================================================
--- Problem 3: Delivery performance by vehicle type and status
--- =====================================================================
--- Analyze delivery performance by vehicle type and delivery status
--- patterns.
---
--- Expected output columns (in order):
---   vehicle_type, delivery_status, total_deliveries, avg_distance
---
--- Schema: food-delivery (delivery_personnel, deliveries)
--- Technique: JOIN + GROUP BY
--- =====================================================================
-
+-- How does delivery volume and distance vary by vehicle type and delivery status?
 select
     vehicle_type,
     delivery_status,
@@ -72,18 +36,7 @@ group by vehicle_type, delivery_status
 order by vehicle_type asc, delivery_status asc;
 
 
--- =====================================================================
--- Problem 4: Promotion effectiveness by discount type and order month
--- =====================================================================
--- Analyze promotion effectiveness by discount type and order month.
---
--- Expected output columns (in order):
---   discount_type, order_month, orders_with_promotion, total_discount_given
---
--- Schema: food-delivery (promotions, orders)
--- Technique: JOIN + GROUP BY + EXTRACT() for date-part grouping
--- =====================================================================
-
+-- Which promotion types drive the most usage and discount value, and how does that shift by month?
 select
     discount_type,
     extract(month from order_date)  as order_month,
