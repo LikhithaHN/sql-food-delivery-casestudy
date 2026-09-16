@@ -1,16 +1,3 @@
--- What is the distribution of active, high-rated (>= 3.5) restaurants by city and state?
-select
-    city,
-    state,
-    count(restaurant_id)          as restaurant_count,
-    round(avg(average_rating), 2) as avg_rating
-from restaurants
-where is_active = "TRUE"
-    and average_rating >= 3.5
-group by city, state
-order by state asc, city asc;
-
-
 -- Which menu item categories and spice levels are most popular across all restaurants?
 select
     i.category_name,
@@ -46,3 +33,29 @@ from promotions as p
 join orders as o on o.promotion_id = p.promotion_id
 group by discount_type, order_month
 order by order_month asc, total_discount_given desc;
+
+
+-- Which restaurant categories generate the highest order volume and revenue?
+select
+    rc.category_name,
+    count(o.order_id)             as total_orders,
+    round(sum(o.total_amount), 2) as total_revenue
+from restaurant_categories rc
+join restaurants r on r.category_id = rc.category_id
+join orders o on o.restaurant_id = r.restaurant_id
+group by rc.category_name
+order by total_revenue desc;
+
+
+-- How does payment method usage and total amount processed differ between premium and non-premium members?
+select
+    u.is_premium_member,
+    p.payment_method,
+    count(p.payment_id)             as total_payments,
+    round(sum(p.payment_amount), 2) as total_amount
+from users u
+join orders o on o.user_id = u.user_id
+join payments p on p.order_id = o.order_id
+where p.payment_status = 'Success'
+group by u.is_premium_member, p.payment_method
+order by u.is_premium_member desc, total_amount desc;
