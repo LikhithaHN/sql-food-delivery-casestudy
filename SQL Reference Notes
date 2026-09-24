@@ -1,0 +1,55 @@
+# SQL Gotchas & Patterns
+
+Recurring traps and patterns worth not relearning.
+
+## Traps
+- Round only in the final SELECT — rounding before ranking distorts results.
+- Integer division: cast operands (`CAST(x AS FLOAT)` or `x::float`) to avoid truncation.
+- LEFT JOIN + WHERE trap: filters on the right-hand table belong in the `ON`
+  clause, not `WHERE` — otherwise the LEFT JOIN silently becomes an INNER JOIN.
+- Window functions can't be used directly in `WHERE` — wrap in a CTE and
+  filter in the outer query.
+- Watch positional `ORDER BY` numbers when columns are added or reordered.
+
+## Signals
+- "unique sequential" → `ROW_NUMBER()`
+- "same rank, skipped" → `RANK()`
+- "within each / per" → `PARTITION BY`
+
+## Patterns
+- Bridge table: when two parent tables have no direct FK, find the
+  child/fact table that connects them.
+- The LEFT table is the "about" table — it keeps all its rows.
+- With `LEFT JOIN`, use `COUNT(right_table.col)` rather than `COUNT(*)` to
+  avoid overcounting.
+- Prefer CTEs over nested subqueries for multi-step logic — easier to read
+  and debug.
+
+## Syntax differences (MySQL vs PostgreSQL)
+- Casting: `CAST(x AS type)` (MySQL) vs `x::type` (PostgreSQL)
+- Date parts: `YEAR(x)`, `QUARTER(x)` (MySQL) vs `EXTRACT(YEAR FROM x)` (PostgreSQL)
+
+## More patterns
+- If a column appears unaggregated in `SELECT` and isn't a grouping key,
+  decide whether it needs an aggregate (`AVG`, `SUM`, `MAX`...) — rounding
+  a raw column doesn't make it one, and grouping by it splits one logical
+  group into many.
+- Match output aliases exactly to the spec. Logic can be fully correct
+  while a column name still doesn't match what's expected.
+- `EXTRACT(MONTH FROM date)` collapses across years; use
+  `DATE_TRUNC('month', date)` if the dataset spans more than one year.
+- After joining a "many" table (e.g. order line items) back to something
+  you want a distinct count of, use `COUNT(DISTINCT col)` — the join fans
+  rows out, so a plain `COUNT` overcounts.
+- In PostgreSQL, `ORDER BY ... DESC` sorts `NULL` values *first* by
+  default (the reverse of what you'd intuitively expect for "highest
+  first"). A NULL-rated row can end up ranked #1 in a window function
+  unless you add `NULLS LAST` explicitly.
+- "ranking with gaps after tied values" / "same rank, skipped" → `RANK()`.
+  "unique sequential positioning" → `ROW_NUMBER()`. The task's exact
+  wording usually tells you which one is expected.
+- Before joining two tables, check they actually share the right grain.
+  Two tables can share a column (e.g. `restaurant_id`) without that
+  column being the correct join key for the question — joining at the
+  wrong grain silently fans rows out in a way that looks plausible but
+  answers a different question than the one asked.
